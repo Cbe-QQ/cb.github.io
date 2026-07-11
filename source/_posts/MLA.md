@@ -25,7 +25,7 @@ mathjax: true
 
 **论文流程图**:
 
-![image-20260709213727426](/cb.github.io/images/MLA-paper.png)
+![image-20260709213727426](/images/MLA-paper.png)
 
 MLA整体流程可以分为部分，输入$x_t$
 
@@ -68,7 +68,7 @@ MLA整体流程可以分为部分，输入$x_t$
 
 **计算流程图**：
 
-![img](/cb.github.io/images/MLA-flow.jpg)
+![img](/images/MLA-flow.jpg)
 
 
 

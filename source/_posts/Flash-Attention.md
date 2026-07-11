@@ -51,7 +51,7 @@ $\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V
 
 公式如下：
 
-![img](/cb.github.io/images/FA_2.jpg)
+![img](/images/FA_2.jpg)
 
 从以下的公式推断：
 
@@ -167,7 +167,7 @@ for block_start_Bc in range(0, N, Bc):
 
 重点循环：Q外循环，KV内循环
 
-![img](/cb.github.io/images/FA_1.jpg)
+![img](/images/FA_1.jpg)
 
 从以下公式推断：
 

@@ -22,7 +22,7 @@ mathjax: true
 
 #### 整体架构
 
-![img](/cb.github.io/images/MoE.png)
+![img](/images/MoE.png)
 
 - **门控网络(Gate Network)**：决定不同token应该由哪个专家处理
 - **专家(Experts)**：每个专家实际是一个FFN
@@ -48,7 +48,7 @@ $$
 
 ##### DS V1
 
-![img](/cb.github.io/images/DS-V1.jpg)
+![img](/images/DS-V1.jpg)
 
 由于当前MoE架构中存在知识混杂和知识冗余，为了解决该问题，引入了：
 
