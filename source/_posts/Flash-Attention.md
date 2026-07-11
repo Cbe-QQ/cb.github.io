@@ -246,7 +246,7 @@ for block_start_Br in range(0, N, Br):
         li = torch.exp(mi - mi_new) * li + torch.sum(Pij_hat, dim=1)[:, None]
         # 算法流程第10步
         Oi = Oi * torch.exp(mi - mi_new) + Pij_hat @ Vj
-        
+$
         mi = mi_new
 
     # 第12步

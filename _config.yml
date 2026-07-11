@@ -99,6 +99,14 @@ ignore:
 ## Themes: https://hexo.io/themes/
 theme: volantis
 
+# Markdown renderer
+marked:
+  gfm: true
+  breaks: true
+  pedantic: false
+  smartLists: true
+  smartypants: false
+
 # MathJax
 mathjax:
   tags: none
