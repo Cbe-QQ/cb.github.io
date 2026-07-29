@@ -36,9 +36,11 @@ plugins:
 3. 加权求和得到最后的输出结果
 
 $$
-Gate(x) = softmax(xW) \\
-Experts(x)=(xW_1)W_2 \\
-Output(x)=\sum_{i=1}^nGate(x)_i Experts_i(x)
+\begin{aligned}
+Gate(x) &= softmax(xW) \\
+Experts(x) &= (xW_1)W_2 \\
+Output(x) &= \sum_{i=1}^nGate(x)_i Experts_i(x)
+\end{aligned}
 $$
 
 #### 存在的问题
@@ -59,13 +61,15 @@ $$
 
 **计算公式如下**:
 $$
-h_t^l = \sum_{i=1}^{K_s}FFN_i{x_t^l} + \sum_{K_s+1}^{m^N}g_{i,t}FFN_i{x_t^l} + x_t^l \\
-g_{i,t} =
+\begin{aligned}
+h_t^l &= \sum_{i=1}^{K_s}FFN_i{x_t^l} + \sum_{K_s+1}^{mN}g_{i,t}FFN_i{x_t^l} + x_t^l \\
+g_{i,t} &=
 \begin{cases}
 s_{i,t}, & s_{i,t} \in \mathrm{Topk}\left(\{s_{j,t}\mid K_s + 1 \le j \le mN\},\, mK - K_s\right) \\
 0, & \text{otherwise}
 \end{cases} \\
-s_{i,t} = \mathrm{Softmax}_i\left(x_t^l e_i\right)
+s_{i,t} &= \mathrm{Softmax}_i\left(x_t^l e_i\right)
+\end{aligned}
 $$
 
 > $K_s$表示的共享专家的数量

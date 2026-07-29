@@ -40,10 +40,12 @@ $\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V
 
   - 公式：
     $$
-    m_{new} = Max(m_{old}, m_{block}) \\
-    l_{new} = \sum_{i=0}^{2n}e^{i - m_{new}}\\
-    =\sum_{i=0}^{n}e^{i - m_{old} + m_{old} - m_{new}} + \sum_{i=n+1}^{2n}e^{i-m_{block} + m_{block} -m_{new}}\\
-    =e^{m_{old} - m_{new}}*l_{old} + e^{m_{block}-m_{new}}*l_{block}
+    \begin{aligned}
+    m_{new} &= Max(m_{old}, m_{block}) \\
+    l_{new} &= \sum_{i=0}^{2n}e^{i - m_{new}}\\
+    &=\sum_{i=0}^{n}e^{i - m_{old} + m_{old} - m_{new}} + \sum_{i=n+1}^{2n}e^{i-m_{block} + m_{block} -m_{new}}\\
+    &=e^{m_{old} - m_{new}}*l_{old} + e^{m_{block}-m_{new}}*l_{block}
+    \end{aligned}
     $$
 
 
@@ -81,10 +83,12 @@ $\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V
 
   - 计算得到最后的Output：
     $$
-    Ouput = \frac{e^{S-m_{new}}}{l}V \\
-    =\frac{e^{S_1 - m_{new}}}{l}V_1 + \frac{e^{S_2} - m_{new}}{l}V_2 \\
-    =\frac{e^{S_1-m_1}e^{m_1-m_{new}}l_1 / l_1V_1}{l} + \frac{e^{S_2 - m_{2}}e^{m_2 - m_{new}}V_2}{l} \\
-    =\frac{O_1e^{m_1 - m_{new}}l_1 + e^{S_2 - m_{new}}P_2V_2}{l}
+    \begin{aligned}
+    Output &= \frac{e^{S-m_{new}}}{l}V \\
+    &=\frac{e^{S_1 - m_{new}}}{l}V_1 + \frac{e^{S_2 - m_{new}}}{l}V_2 \\
+    &=\frac{e^{S_1-m_1}e^{m_1-m_{new}}l_1 / l_1V_1}{l} + \frac{e^{S_2 - m_{2}}e^{m_2 - m_{new}}V_2}{l} \\
+    &=\frac{O_1e^{m_1 - m_{new}}l_1 + e^{S_2 - m_{new}}P_2V_2}{l}
+    \end{aligned}
     $$
 
 
@@ -194,9 +198,11 @@ for block_start_Bc in range(0, N, Bc):
 
   - 计算最后的Output:
     $$
-    Output = e^{S-m_{new}}V \\
-    =e^{S_1 - m_1}e^{m_1 - m_{new}}V_1 + e^{S_2 - m_{new}}V_2 \\
-    =O_1e^{m_1 - m_{new}}+ P_2V_2
+    \begin{aligned}
+    Output &= e^{S-m_{new}}V \\
+    &=e^{S_1 - m_1}e^{m_1 - m_{new}}V_1 + e^{S_2 - m_{new}}V_2 \\
+    &=O_1e^{m_1 - m_{new}}+ P_2V_2
+    \end{aligned}
     $$
 
   - 不断更新l的值，在最后一个ouput时除以l，就是最后的结果
