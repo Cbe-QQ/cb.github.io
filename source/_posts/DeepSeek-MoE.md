@@ -65,7 +65,6 @@ g_{i,t} =
 s_{i,t}, & s_{i,t} \in \mathrm{Topk}\left(\{s_{j,t}\mid K_s + 1 \le j \le mN\},\, mK - K_s\right) \\
 0, & \text{otherwise}
 \end{cases} \\
-
 s_{i,t} = \mathrm{Softmax}_i\left(x_t^l e_i\right)
 $$
 
@@ -89,13 +88,14 @@ DeepSeek-V2进一步扩大了细粒度专家选择，采用了路由专家160选
 
 **计算公式如下**
 $$
-h'_t = u_t + \sum_{i=1}^{N_s} \mathrm{FFN}_i^{(s)}(u_t)
-+ \sum_{i=1}^{N_r} g_{i,t}\,\mathrm{FFN}_i^{(r)}(u_t), \\
-g_{i,t} = \frac{g'_{i,t}}{\sum_{j=1}^{N_r} g'_{j,t}}, \\
-g'_{i,t} =
+\begin{aligned}
+h'_t &= u_t + \sum_{i=1}^{N_s} \mathrm{FFN}_i^{(s)}(u_t) + \sum_{i=1}^{N_r} g_{i,t}\,\mathrm{FFN}_i^{(r)}(u_t), \\
+g_{i,t} &= \frac{g'_{i,t}}{\sum_{j=1}^{N_r} g'_{j,t}}, \\
+g'_{i,t} &=
 \begin{cases}
 s_{i,t}, & s_{i,t} \in \mathrm{Topk}\left(\{s_{j,t}\mid 1 \le j \le N_r\},\, K_r\right) \\
 0, & \text{otherwise}
 \end{cases} \\
-s_{i,t} = \mathrm{Sigmoid}\left(u_t^T e_i\right).
+s_{i,t} &= \mathrm{Sigmoid}\left(u_t^T e_i\right).
+\end{aligned}
 $$

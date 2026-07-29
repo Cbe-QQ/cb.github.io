@@ -54,17 +54,17 @@ MLA整体流程可以分为部分，输入$x_t$
 
 - RoPE位置编码得到最后QK：
 
-  - $q_t^mathbb{R}=RoPE(W^{Qmathbb{R}}c_t^q)$
+  - $q_t^{\mathbb{R}}=RoPE(W^{Q\mathbb{R}}c_t^q)$
 
-  - $k_t^mathbb{R}=RoPE(W^{Kmathbb{R}}x_t)$
+  - $k_t^{\mathbb{R}}=RoPE(W^{K\mathbb{R}}x_t)$
 
-    > 1. $q_t^mathbb{R}$和$k_t^mathbb{R}$都是较小的向量维度
-    > 2. $k_t^mathbb{R}$是所有head共享一个k
+    > 1. $q_t^{\mathbb{R}}$和$k_t^{\mathbb{R}}$都是较小的向量维度
+    > 2. $k_t^{\mathbb{R}}$是所有head共享一个k
 
   - 使用矩阵拼接得到最后的qk
 
-    - $q=[Q;q_t^mathbb{R}]$
-    - $k=[K;k_t^mathbb{R}]$
+    - $q=[Q;q_t^{\mathbb{R}}]$
+    - $k=[K;k_t^{\mathbb{R}}]$
 
 
 
