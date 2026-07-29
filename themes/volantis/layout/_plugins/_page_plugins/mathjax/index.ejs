@@ -3,6 +3,7 @@
   if (typeof MathJax === 'undefined') {
     window.MathJax = {
       loader: {
+        load: ['[tex]/ams'],
         source: {
           '[tex]/amsCd': '[tex]/amscd',
           '[tex]/AMScd': '[tex]/amscd'
@@ -10,7 +11,11 @@
       },
       tex: {
         inlineMath: {'[+]': [['$', '$']]},
-        tags: 'ams'
+        tags: 'ams',
+        macros: {
+          "\\R": "\\mathbb{R}"
+        },
+        packages: {'[+]': ['ams']}
       },
       options: {
         renderActions: {

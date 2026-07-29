@@ -8,6 +8,8 @@ tags:
   - Mixture of Experts
   - Deep Learning
 mathjax: true
+plugins:
+  - mathjax
 ---
 
 #### 概念：

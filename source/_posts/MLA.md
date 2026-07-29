@@ -8,6 +8,8 @@ tags:
   - DeepSeek
   - KV Cache
 mathjax: true
+plugins:
+  - mathjax
 ---
 
 在聊MLA作用之前，先说一下推理的流程，总共分为2个流程：
@@ -32,7 +34,7 @@ MLA整体流程可以分为部分，输入$x_t$
 - $KV$计算流程：
 
   1. 输入低秩投影得到$c_t^{kv}$：$c_t^{kv}=W^{DKV}x_t$， 该向量是存储的KV向量，用于推理
-     - $W^{DKV}\in \R^{d_c\times d}$
+     - $W^{DKV}\in \mathbb{R}^{d_c\times d}$
        - $d_c$: KV低秩投影维度，$d_c=4\times d_h$
        - $d_h$: 单个head的维度
        - $n_h$: 总head的维度
@@ -40,29 +42,29 @@ MLA整体流程可以分为部分，输入$x_t$
   2. 计算得到KV矩阵: 将KV矩阵维度扩展到原多头维度
      - $K=W_kc_t^{qk}$
      - $V=W_vc_t^{qk}$
-     - $W_k, W_v\in \R^{d_hn_h\times d_c}$
+     - $W_k, W_v\in \mathbb{R}^{d_hn_h\times d_c}$
 
 - $Q$计算流程：
 
   1. 低秩投影：$c_t^{q}=Wx_t$
-     - $W\in \R^{d_q\times d}$
+     - $W\in \mathbb{R}^{d_q\times d}$
      - $d_q$: Q低秩投影维度，是$d_c$ 3倍
   2. 升维：$Q=W_qc_t^q$
-     - $W_q \in \R^{d_hn_h\times d_q}$
+     - $W_q \in \mathbb{R}^{d_hn_h\times d_q}$
 
 - RoPE位置编码得到最后QK：
 
-  - $q_t^R=RoPE(W^{QR}c_t^q)$
+  - $q_t^mathbb{R}=RoPE(W^{Qmathbb{R}}c_t^q)$
 
-  - $k_t^R=RoPE(W^{KR}x_t)$
+  - $k_t^mathbb{R}=RoPE(W^{Kmathbb{R}}x_t)$
 
-    > 1. $q_t^R$和$k_t^R$都是较小的向量维度
-    > 2. $k_t^R$是所有head共享一个k
+    > 1. $q_t^mathbb{R}$和$k_t^mathbb{R}$都是较小的向量维度
+    > 2. $k_t^mathbb{R}$是所有head共享一个k
 
   - 使用矩阵拼接得到最后的qk
 
-    - $q=[Q;q_t^R]$
-    - $k=[K;k_t^R]$
+    - $q=[Q;q_t^mathbb{R}]$
+    - $k=[K;k_t^mathbb{R}]$
 
 
 
