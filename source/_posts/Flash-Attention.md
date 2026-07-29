@@ -21,7 +21,7 @@ $\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V
 
   3. Softmax 归一化：对每行做 softmax，将得分转换为概率分布（每行之和为 1）。此时每个值代表对应位置 Value 的注意力权重。
 
-    4. 加权求和：将注意力权重矩阵与 Value 矩阵 $V$ 相乘。每个输出位置是所有 Value 向量的加权和，权重由 Query-Key 的相关性决定。
+  4. 加权求和：将注意力权重矩阵与 Value 矩阵 $V$ 相乘。每个输出位置是所有 Value 向量的加权和，权重由 Query-Key 的相关性决定。
 
  直观理解：对于序列中的每个位置，Attention 机制动态地决定应该"关注"序列中哪些其他位置，并聚合它们的 Value 信息。越相关的位置，分配的权重越大。
 
