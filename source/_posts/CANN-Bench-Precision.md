@@ -11,6 +11,8 @@ plugins:
 ---
 
 > 基于 `cann-bench/src/kernel_eval/` 源码和 `docs/design/precision_comparison_design.md` 设计文档分析。
+>
+> 项目地址：[CANN-Bench](https://gitcode.com/cann/cann-bench?source_module=search_project)
 
 ---
 
