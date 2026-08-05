@@ -1,6 +1,6 @@
 ---
 title: CANN-Bench 精度验证模块分析
-date: 2026-08-03
+date: 2026-08-05
 categories: CANN
 tags:
   - Precision
@@ -10,62 +10,63 @@ plugins:
   - mathjax
 ---
 
-> 基于 `cann-bench/src/kernel_eval/` 源码和 `docs/design/precision_comparison_design.md` 设计文档分析。
->
-> 项目地址：[CANN-Bench](https://gitcode.com/cann/cann-bench?source_module=search_project)
+# CANN-Bench 精度验证——如何判断 AI 算子"算对了"？
 
 ---
 
-## 一、精度验证的输入数据是如何产生的？
+## 开篇：为什么需要精度验证？
 
-精度验证涉及**三组数据**，分别来自**三个不同函数/执行路径**，但基于**同一组输入张量**：
+CANN-Bench 评测 AI 生成 Ascend C 算子代码的能力。一个算子能编译通过、能在 NPU 上跑起来，不等于它算对了——我们需要一个自动化标准来判断"NPU 的输出和正确答案差多远"。
 
-### 数据流全景
+核心挑战在于：**浮点运算天然有误差**。同样的加法，fp16 和 fp32 算出来的结果不一样，这不代表算子写错了，而是精度位宽决定了它能表达多精确的结果。精度验证要解决的就是区分两个问题：
+
+> - 这个误差是**浮点精度限制**导致的？→ 不是 bug，放过
+> - 这个误差是**算子实现有 bug**？→ 有问题，FAIL
+
+---
+
+## 核心思路：三角验证
 
 ```
-                         CaseSpec (cases.yaml/csv)
-                              │
-                   ┌──────────┼──────────┐
-                   ▼          ▼          ▼
-            input_tensors (data_generator.py:generate_input_tensors_from_case)
-                              │
-         ┌────────────────────┼────────────────────┐
-         ▼                    ▼                    ▼
-  ┌──────────────┐   ┌──────────────┐   ┌──────────────┐
-  │ ① AI 输出     │   │ ② Golden 输出 │   │ ③ Native 输出 │
-  │ (NPU 上执行)  │   │ (FP64 CPU)   │   │ (同精度 CPU)  │
-  └──────┬───────┘   └──────┬───────┘   └──────┬───────┘
-         │                  │                  │
-         ▼                  ▼                  ▼
-  ┌──────────────────────────────────────────────────────┐
-  │              compare_tensors(a, g, native)            │
-  │              (compare.py:680)                         │
-  └──────────────────────────────────────────────────────┘
+         同一组输入张量
+               │
+    ┌──────────┼──────────┐
+    ▼          ▼          ▼
+  ┌────┐   ┌────┐   ┌────────┐
+  │ NPU│   │CPU │   │ CPU    │
+  │原始│   │FP64│   │ 原始    │
+  │精度│   │精度│   │ 精度    │
+  └──┬─┘   └──┬─┘   └───┬────┘
+     ▼         ▼         ▼
+  ① AI     ② Golden   ③ Native
+  输出      参考值      参考值
+  (被测)    (真值)     (对照)
+     │         │         │
+     └────┬────┴────┬────┘
+          ▼         ▼
+     输出 vs Golden   输出 vs Native
+     (MERE/MARE)     (同精度对照)
 ```
+
+**三句话概括这个设计**：
+
+1. **Golden 用 FP64 算**：得到最接近数学真值的参考值，作为"标准答案"
+2. **Native 用原始精度算**：和 NPU 相同的 dtype，看看同样位宽下 CPU 能算多准
+3. **两个参照系交叉验证**：输出偏离 Golden 但 CPU 也偏离 → 是精度限制；输出偏离 Golden 而 CPU 很准 → 是算子 bug
+
+---
+
+## 一、三路数据从哪来？
+
+三组数据基于**同一组输入张量**，只是执行路径不同。
 
 ### ① AI 输出（被测对象）
 
-- **来源**：AI 生成的 Ascend C 算子代码在 NPU 设备上执行后的输出
-- **调用路径** (`eval/evaluator.py:284-286`):
+AI 生成的算子代码编译后，在 NPU 设备上执行。输出 raw bytes 转为 Tensor。
 
-```python
-ai_result = self._run_ai_op_isolated(actual_ai_func, params, ...)
-```
+### ② Golden 输出（FP64 高精度参考，即"标准答案"）
 
-- **底层执行**：通过 `OpRunner.run()` → NPU kernel launch → `torch.as_strided` 或 `numpy.frombuffer` 转为 Tensor
-
-### ② Golden 输出（FP64 高精度参考）
-
-- **来源**：`golden.py` 中定义的 PyTorch 参考函数，用 **FP64 精度在 CPU** 上计算
-- **调用路径** (`eval/evaluator.py:239-244`):
-
-```python
-oracle_func = self._oracle_reference_func(case.rel_path, golden_func)
-golden_inputs = self._apply_golden_precision(input_tensors)  # → FP64
-golden_result = self.op_runner.run(oracle_func, golden_params, ...)
-```
-
-- **Golden 策略** (`eval/evaluator.py:829-844`): 支持三种模式：
+使用 `golden.py` 中定义的 PyTorch 参考函数，将输入提升到 FP64 精度在 CPU 上计算。支持三种精度策略：
 
 | 策略 | 精度 | 设备 | 说明 |
 |------|------|------|------|
@@ -73,116 +74,126 @@ golden_result = self.op_runner.run(oracle_func, golden_params, ...)
 | `native_cpu` | 原始 dtype | CPU | 保持原始精度在 CPU 上计算 |
 | `native_npu` | 原始 dtype | NPU | 保持原始精度在 NPU 上计算 |
 
-### ③ Native 输出（同精度参考，用于小值域/相消对照）
+### ③ Native 输出（同精度参考，即"CPU 同条件对照"）
 
-- **来源**：与 golden **同一函数**，但输入保持**目标 dtype 精度**（不做 FP64 提升）
-- **调用路径** (`eval/evaluator.py:313-323`):
+与 Golden 用**同一函数**，但输入保持目标 dtype 不做 FP64 提升，在 CPU 上执行。它的作用是回答："同样的 dtype 下，CPU 算得准不准？"
 
-```python
-bench_func = self._bench_reference_func(case.rel_path, golden_func)
-native_inputs = tensors_to_cpu(input_tensors)  # 保持原始精度
-native_result = self.op_runner.run(bench_func, native_params, ..., to_device=False)
+### 小结
+
+| 数据 | 执行函数 | 精度 | 设备 | 角色 |
+|------|---------|------|------|------|
+| AI output | AI 生成的算子代码 | 原始 dtype | NPU | 被测对象 |
+| Golden output | `golden.py` | FP64 | CPU | 标准答案 |
+| Native output | `golden.py` | 原始 dtype | CPU | 同条件对照 |
+
+---
+
+## 二、怎么比？精度对比的两阶段算法
+
+拿到三路数据后，默认使用 **RelativeErrorChecker** 进行比对。整体流程为：
+
+```
+dtype 分流 → 阶段 1：全局相对误差（快车道）→ 不通过 → 阶段 2：分区域兜底（慢车道）
 ```
 
-- 当 golden 策略本身是 `native_cpu`/`native_npu` 时，native 直接复用 golden 结果优化性能
+### 2.1 dtype 分流
 
-### 关键结论
+整数类型和 threshold=0 的浮点直接走逐元素精确/bit-exact 比较，不做相对误差分析。普通浮点（fp16/bf16/fp32/...）进入下述两阶段判定。
 
-| 数据 | 执行函数 | 精度 | 设备 |
-|------|---------|------|------|
-| AI output | AI 生成的算子代码 | 原始 dtype | NPU |
-| Golden output | `golden.py` / oracle 钩子 | FP64 | CPU |
-| Native output | `golden.py` / bench 钩子 | 原始 dtype | CPU |
+### 2.2 阶段 1：看整体——MERE/MARE 快速判定
 
-**三组数据来自两个不同函数（AI算子 vs golden参考），但同精度参考和FP64参考可以共用同一个 golden 函数，区别仅在于输入精度和计算设备。**
+**核心思想**：绝大多数正确的算子，整体误差都很小。先用一把"整体尺子"量一下，通过就直接放行——90%+ 的 case 在这一步结束。
 
----
+**预处理**：FP64 Golden 先截断到算子输出 dtype 再升回 FP64。这一步让 Golden 和 AI 输出在相同位宽下比较——否则 FP64 的 52 位尾数和 fp16 的 10 位尾数天然差了几个数量级，比出来的误差毫无意义。
 
-## 二、精度验证的具体逻辑与数学公式
-
-系统支持两种 Checker：`RelativeErrorChecker`（**默认**，CANN 评测集选用）和 `AllCloseChecker`（StanfordBench 选用）。
-
-### 2.1 总览：判定流程
-
-整数类型走逐元素精确匹配，threshold=0 的浮点走字节级 bit-exact 比较，其余普通浮点（fp16/bf16/fp32/...）分两阶段：
-
-> **阶段 1**：计算全局 MERE（平均相对误差）和 MARE（最大相对误差），两者都达标则直接 PASS——绝大多数 case 走这条路径。
->
-> **阶段 2**：阶段 1 不通过时触发。将元素按 golden 绝对值大小分为三个互不重叠区域——小值域（golden 极小）、相消区（golden 在精度边界且 output≈0）、正常值域（其余）——每个区域独立做 NPU vs CPU 同精度对照。三个区域全部通过才算 PASS，任一不通过则 FAIL。
-
-**核心思想**：阶段 2 用"CPU 同精度参考是否也产生同样的误差"来区分浮点精度不够导致的必然误差和算子算错。
-
----
-
-### 2.2 阶段 1：全局相对误差
-
-#### 2.2.1 预处理
-
-FP64 Golden 先截断到算子输出精度再升回 FP64，保证双方在同等位宽下比较。
-
-#### 2.2.2 逐元素相对误差
-
-对每个有效位置（排除 NaN、Inf、双方同号 Inf），计算：
+**逐元素相对误差**：
 
 $$rel\_err_i = \frac{|output_i - golden_i|}{|golden_i| + 10^{-7}}$$
 
-分母加 $10^{-7}$ 仅用于防除零。
+分母 $+10^{-7}$ 仅用于防除零。排除 NaN、Inf、双方同号 Inf 位置后聚合：
 
-#### 2.2.3 聚合指标
+- **MERE**（平均相对误差）：$mean(rel\_err)$，反映整体平均偏多少
+- **MARE**（最大相对误差）：$max(rel\_err)$，反映最差的一个元素偏了多少
 
-**MERE**（Mean Relative Error，平均相对误差）：所有有效位置 `rel_err` 的均值，反映整体偏离程度。
+**判定**：
 
-**MARE**（Max Relative Error，最大相对误差）：所有有效位置 `rel_err` 的最大值，反映最差单个元素的偏离程度。
+$$MERE < \theta \quad \land \quad MARE < 10 \times \theta \quad \Rightarrow \quad \text{✅ 直接 PASS}$$
 
-#### 2.2.4 判定
+> MARE 为什么是 10 倍？平均值看趋势，最大值看有没有个别元素严重算错。放 10 倍避免边缘元素的舍入差异误杀整体正确的算子。
 
-若 $MERE < \theta$ 且 $MARE < 10 \times \theta$，则直接 PASS；否则进入阶段 2 兜底。
+**阈值 $\theta$ 随 dtype 递减**：精度越低的类型，能表达的有效数字越少，阈值自然越宽。
 
-MARE 线设为 10 倍是因为平均值看整体趋势、最大值看个别元素，放宽 10 倍避免边缘舍入差异误杀。
+| dtype | $\theta$ | 尾数位数 | 直观理解 |
+|-------|----------|----------|---------|
+| float64 | $2^{-13} \approx 1.22 \times 10^{-4}$ | 52 | 万分之一级容错 |
+| float32 | $2^{-13} \approx 1.22 \times 10^{-4}$ | 23 | 万分之一级容错 |
+| hifloat32 | $2^{-11} \approx 4.88 \times 10^{-4}$ | 19 | 万分之五级容错 |
+| float16 | $2^{-10} \approx 9.77 \times 10^{-4}$ | 10 | 千分之一级容错 |
+| bfloat16 | $2^{-7} \approx 7.81 \times 10^{-3}$ | 7 | 百分之一级容错 |
+| float8_e4m3fn | $2^{-3} \approx 1.25 \times 10^{-1}$ | 3 | 十分之一级容错 |
+| float8_e5m2 | $2^{-2} \approx 2.50 \times 10^{-1}$ | 2 | 四分之一级容错 |
 
-#### 2.2.5 阈值 $\theta$
-
-| dtype | $\theta$ | 尾数位数 | MARE 上限 $(10\theta)$ |
-|-------|----------|----------|----------------------|
-| float64 | $2^{-13} \approx 1.22 \times 10^{-4}$ | 52 | $10 \times 2^{-13} \approx 1.22 \times 10^{-3}$ |
-| float32 | $2^{-13} \approx 1.22 \times 10^{-4}$ | 23 | $10 \times 2^{-13} \approx 1.22 \times 10^{-3}$ |
-| hifloat32 | $2^{-11} \approx 4.88 \times 10^{-4}$ | 19 | $10 \times 2^{-11} \approx 4.88 \times 10^{-3}$ |
-| float16 | $2^{-10} \approx 9.77 \times 10^{-4}$ | 10 | $10 \times 2^{-10} \approx 9.77 \times 10^{-3}$ |
-| bfloat16 | $2^{-7} \approx 7.81 \times 10^{-3}$ | 7 | $10 \times 2^{-7} \approx 7.81 \times 10^{-2}$ |
-| float8_e4m3fn | $2^{-3} \approx 1.25 \times 10^{-1}$ | 3 | $10 \times 2^{-3} \approx 1.25$ |
-| float8_e5m2 | $2^{-2} \approx 2.50 \times 10^{-1}$ | 2 | $10 \times 2^{-2} \approx 2.50$ |
-
-整数类型（int8/16/32/64, uint8/16/32/64）：$\theta = 0$，要求逐元素精确相等。
-
-> 未知 dtype 回退 float32 阈值。
+整数类型（int8/16/32/64, uint8/16/32/64）：$\theta = 0$，要求逐元素精确相等。未知 dtype 回退 float32 阈值。
 
 ---
 
-### 2.3 阶段 2：分区域兜底
+### 2.3 阶段 2：拆开看——分区域兜底
 
-阶段 1 不通过时触发。将元素按 $|golden_i|$ 大小分为三个互不重叠区域：
+#### 问题：为什么一把尺子不够？
 
-- **小值域**：$|golden_i| < \delta_{small}$。golden 极小，相对误差无意义，改用绝对误差判定。
-- **相消区**：$\delta_{small} \leq |golden_i| < \tau_{cancel}$ 且 $|output_i| \approx 0$。疑似 Kahan 灾难性相消导致 output 归零。
-- **正常值域**：其余有效位置。相对误差可信，正常判定。
+阶段 1 的 MERE/MARE 是对**整个张量**做一把抓的判断。但这把尺子不公平——不同数值区间对"误差"的容忍度截然不同。
 
-每个区域采用统一的同精度对照模式：分别统计 NPU 和 CPU 在该区域的错误数，若满足以下条件则通过：
+用一个具体例子说明三个问题：
+
+> **场景**：fp16 算子，某元素 golden = 0.000001（$10^{-6}$），output = 0.000010（$10^{-5}$）。
+>
+> 绝对误差只有 $9 \times 10^{-6}$，肉眼几乎看不出区别。但相对误差 = 9 倍——远超任何阈值，把整个 MARE 拉爆。
+>
+> **这不是算子算错了，是分母太小把误差放大了。** 这就是小值域问题。
+
+> **场景**：fp32 算子，内部计算 `10000.5 - 10000.3`，精确数学答案 = 0.2。
+>
+> 但 fp32 只有约 7 位有效数字，而 `10000.5` 已经占掉 6 位——第 7 位不可靠，减法后可能得到 0、0.199、甚至符号相反。
+>
+> **这不是算子写错了，而是浮点运算的固有缺陷。** CPU 跑同样的计算也会得到同样的错误结果。这就是相消问题。
+
+> **场景**：golden = 3.14，output = 3.20。相对误差约 0.02，fp16 阈值 0.001——这确实超了。
+>
+> golden 足够大、没有相消干扰，CPU 同精度参考算出来是 3.141。NPU 比 CPU 差了一个数量级。
+>
+> **这才是真正的算子 bug。**
+
+因此，阶段 2 把张量拆成三个区域，每个区域独立判断：
+
+| 区域 | 条件 | 为什么单独处理 |
+|------|------|--------------|
+| 小值域 | $|golden| < \delta_{small}$ | golden 极小，相对误差被分母放大，无意义 |
+| 相消区 | $\delta_{small} \leq |golden| < \tau_{cancel}$ 且 $|output| \approx 0$ | 内部发生大数相消，output 接近零是精度限制 |
+| 正常值域 | 其余位置 | 相对误差真正可信，这是判断算子是否有 bug 的主战场 |
+
+#### 统一判定公式
+
+三个区域都采用同一个逻辑：**NPU 的错误率不能显著高于 CPU 同精度参考的错误率**。
 
 $$\frac{Err_{npu}}{\max(Err_{cpu},\ 1)} \leq 2$$
 
-区别在于各区域的**错误定义**：
+分母取 $\max(Err_{cpu}, 1)$：CPU 完全没有错误时，分母为 1，允许 NPU 至多有 2 个零星误差。各区域的"错误"定义不同：
 
-- **正常值域**：元素相对误差超过 $10\theta$ 即计入错误。额外规则——若 $Err_{npu} = 0$ 直接通过；若 $Err_{npu} > 0$ 但 $Err_{cpu} = 0$ 直接不通过（CPU 干净则 NPU 必有 bug）。
-- **小值域**：元素绝对误差 $|output_i - golden_i|$ 超过 $\epsilon_{small}$ 即计入错误。
-- **相消区**：同正常值域，相对误差超过 $10\theta$ 即计入错误。
+| 区域 | 一个元素什么时候算"错" | 判定逻辑 |
+|------|---------------------|---------|
+| 正常值域 | 相对误差 $> 10\theta$ | NPU 错 0 个 → 直接 PASS；NPU 错但 CPU 没错 → 直接 FAIL；两者都错 → 看比例是否 ≤ 2 |
+| 小值域 | 绝对误差 $> \epsilon_{small}$ | NPU vs CPU 看比例 |
+| 相消区 | 同正常值域：相对误差 $> 10\theta$ | NPU vs CPU 看比例 |
 
 最终判定：
 
 $$PASS = \text{正常值域通过} \land \text{小值域通过} \land \text{相消区通过}$$
 
-多输出算子每个输出独立执行上述流程，全部通过才算整体 PASS。
+> 核心逻辑再强调一次：**CPU 同精度参考也跑不掉的误差不是 bug，CPU 能干净做到的 NPU 做不到的才是 bug。**
 
-#### 2.3.1 小值域阈值
+#### 各区域阈值
+
+**小值域**（$\delta_{small}$ = 多小才算"极小"，$\epsilon_{small}$ = 绝对误差超过多少算错）：
 
 | dtype | $\delta_{small}$ | $\epsilon_{small}$ |
 |-------|-----------------|-------------------|
@@ -194,106 +205,77 @@ $$PASS = \text{正常值域通过} \land \text{小值域通过} \land \text{相�
 | float8_e4m3fn | $2^{-4} \approx 6.25 \times 10^{-2}$ | $2^{-6} \approx 1.56 \times 10^{-2}$ |
 | float8_e5m2 | $2^{-3} \approx 1.25 \times 10^{-1}$ | $2^{-5} \approx 3.13 \times 10^{-2}$ |
 
-#### 2.3.2 相消阈值
+**相消区**（$\tau_{zero}$ = output 多小判为 ≈0，$\tau_{cancel}$ = golden 进入相消候选区的上限）：
 
-物理背景是 Kahan 灾难性相消：两个大数相减得到小结果时浮点有效数字丢失。例如 fp32 下 $10000.5 - 10000.3$，精确结果 $=0.2$，但 fp32 约 7 位有效数字，$10000.5$ 已占 6 位，减法后最后一位不可靠——NPU 和 CPU 都可能输出 0 甚至符号错误。
+阈值基于 IEEE 754 尾数位数设计——尾数越少，相消越容易发生，值域越宽。
 
-阈值基于 IEEE 754 尾数位数设计：尾数越少，相消发生的值域越宽。
-
-| dtype | $\tau_{zero}$（判定 $output \approx 0$） | $\tau_{cancel}$（golden 上限） |
-|-------|-----------------------------------------|------------------------------|
-| float64 | $2^{-8} \approx 3.91 \times 10^{-3}$ | $2^{-8} \approx 3.91 \times 10^{-3}$ |
-| float32 | $2^{-8} \approx 3.91 \times 10^{-3}$ | $2^{-8} \approx 3.91 \times 10^{-3}$ |
-| hifloat32 | $2^{-8} \approx 3.91 \times 10^{-3}$ | $2^{-8} \approx 3.91 \times 10^{-3}$ |
-| float16 | $2^{-5} \approx 3.13 \times 10^{-2}$ | $2^{-5} \approx 3.13 \times 10^{-2}$ |
-| bfloat16 | $2^{-3} \approx 1.25 \times 10^{-1}$ | $2^{-3} \approx 1.25 \times 10^{-1}$ |
-| float8_e4m3fn | $2^{-1} \approx 5.00 \times 10^{-1}$ | $2^{-1} \approx 5.00 \times 10^{-1}$ |
-| float8_e5m2 | $2^{0} = 1.00$ | $2^{0} = 1.00$ |
-
----
+| dtype | 尾数位数 | $\tau_{cancel}$（golden 上限） | $\tau_{zero}$（output≈0 判定） | 设计原理 |
+|-------|----------|------------------------------|------------------------------|---------|
+| float64 | 52 | $2^{-8} \approx 3.91 \times 10^{-3}$ | $2^{-8} \approx 3.91 \times 10^{-3}$ | 同 float32 |
+| float32 | 23 | $2^{-8} \approx 3.91 \times 10^{-3}$ | $2^{-8} \approx 3.91 \times 10^{-3}$ | 7 位十进制，~$10^4$ 操作数相消得 ~$10^{-3}$ |
+| hifloat32 | 19 | $2^{-8} \approx 3.91 \times 10^{-3}$ | $2^{-8} \approx 3.91 \times 10^{-3}$ | 同 float32 |
+| float16 | 10 | $2^{-5} \approx 3.13 \times 10^{-2}$ | $2^{-5} \approx 3.13 \times 10^{-2}$ | 3 位十进制，~$10^2$ 操作数相消得 ~$10^{-2}$ |
+| bfloat16 | 7 | $2^{-3} \approx 1.25 \times 10^{-1}$ | $2^{-3} \approx 1.25 \times 10^{-1}$ | 2 位十进制，~$10^1$ 操作数相消得 ~$10^{-1}$ |
+| float8_e4m3fn | 3 | $2^{-1} \approx 5.00 \times 10^{-1}$ | $2^{-1} \approx 5.00 \times 10^{-1}$ | 1 位十进制 |
+| float8_e5m2 | 2 | $2^{0} = 1.00$ | $2^{0} = 1.00$ | < 1 位十进制 |
 
 ### 2.4 NaN/Inf 特殊处理
 
-- NPU 和 Golden 同一位置都为 NaN → 视为匹配，不参与误差计算
-- NaN 位置不一致 → 直接 FAIL（计算路径有差异）
-- NPU 为 Inf、Golden 为有限值 → Inf 替换为 dtype 最大有限值后继续比较（fp16 饱和溢出场景）
-- 双方为 Inf 且同号 → 视为匹配
-- 双方为 Inf 但异号 → 直接 FAIL
+- NaN 位置一致 → 视为匹配，不参与误差计算；不一致 → 直接 FAIL
+- 单方 Inf（fp16 饱和溢出） → 替换为 dtype 最大有限值后继续比较
+- 双方同号 Inf → 匹配；异号 Inf → FAIL
+
+### 2.5 AllCloseChecker（备选标准）
+
+StanfordBench 使用的简化标准：每个元素判断 $|output_i - golden_i| \leq atol + rtol \times |golden_i|$。默认 $atol = rtol = 0.01$，不做分区域兜底。
 
 ---
 
-### 2.5 AllCloseChecker（简化备选标准）
+## 三、比不过怎么办？验证失败的处置
 
-StanfordBench 等评测集使用，逻辑简单：对每个元素判断 $|output_i - golden_i| \leq atol + rtol \times |golden_i|$，所有元素都满足则 PASS。默认 $atol = rtol = 0.01$，不做分区域兜底。
+### 3.1 诊断信息
 
----
+每个输出的对比结果记录：MERE/MARE、max_diff/mean_diff、三个值域各自 NPU 和 CPU 的错误数及兜底判定结果。格式化输出告诉使用者"是哪个区域不通过，NPU 比 CPU 差了多少"——精准定位问题。
 
-### 2.6 阈值配置优先级
-
-1. **算子级**（最高）：`proto.yaml` → `precision_thresholds`
-2. **Bench 级**：`bench_config.dtype_tolerance_map`
-3. **CLI 级**：`--precision-thresholds`
-4. **默认表**（最低）：`utils/thresholds.py` → `PRECISION_THRESHOLDS`
-
----
-
-## 三、验证失败时采取的措施
-
-系统设计了**多层故障处理机制**：
-
-### 3.1 详细诊断信息收集
-
-**逐输出精度指标**（嵌入在 `CompareResult` 中，`utils/compare.py:88-114`）：
-
-- MERE / MARE / max_diff / mean_diff
-- mismatch_count / total_count / mismatch_ratio
-- 正常值域/小值域/相消位置的各自 NPU 错误数、CPU 错误数、总数
-- 各值域的兜底判定结果（`small_value_passed` / `cancel_passed` / `normal_passed`）
-
-**格式化输出**（`checkers/relative_error_checker.py:95-154`）：每个输出有一行摘要，包含 MERE/MARE、阈值、以及如果触发了兜底判定则追加小值域/相消的 NPU/CPU 错误对比信息。
-
-### 3.2 失败类型分类
-
-在 `base/result.py:204-234` 中区分两种失败类型（影响评分权重分配，见 README 评分公式）：
+### 3.2 失败分类影响评分
 
 | failure_type | 触发条件 | 分值影响 |
 |-------------|---------|---------|
-| `compile_runtime_error` | 形状不匹配/输出数量不一致/算子崩溃/golden 执行失败 | 整算子计 0 分（w_c + w_f + w_p 全扣） |
-| `precision_mismatch` | 相对误差超标/MERE-MARE 不通过 | 仅扣 w_f + w_p 分（w_c 编译分保留） |
-| `cascade_device` | NPU 设备不可恢复，级联跳过 | 不计入 failed（跳过标记） |
-| `oom_killed` | 子进程被 OOM Kill | 按编译/运行时错误计分 |
+| `compile_runtime_error` | 形状不匹配/算子崩溃/golden 失败 | 整算子计 0 分 |
+| `precision_mismatch` | 精度超标/MERE-MARE 不通过 | 仅扣精度分和性能分，编译分保留 |
 
-分类逻辑（`base/result.py` `STRUCTURAL_FAILURE_MARKERS`）：
-
-```python
-STRUCTURAL_FAILURE_MARKERS = (
-    "输出数量不匹配", "同精度输出数量不匹配", "形状不匹配",
-    "shape mismatch", "is None", "AI算子执行失败",
-    "TypeError:", "RuntimeError:", "ValueError:",
-)
-```
+这个区分很重要：**精度失败说明代码能跑但算不准；编译/运行时失败说明代码根本跑不起来**——两者的严重程度不同，计分也不同。
 
 ### 3.3 防作弊二次验证
 
-当 `Config.enable_accuracy_retry=True` 时（`eval/evaluator.py:359-369`）：
-
-1. 第一轮输入通过精度验证后，使用**偏移种子（seed+1）+微扰（所有浮点 Tensor +0.01）**生成全新输入
-2. 用新输入重新执行 golden + AI 算子
-3. **两轮都通过才算最终 PASS**
-4. 二次验证异常只在 stdout 输出 WARN，不阻断评测流程（返回第一轮结果）
+启用后，第一轮通过时会换一组全新输入再跑一轮。两轮都通过才算 PASS。防止 AI 生成的代码恰好对特定输入"蒙对"。
 
 ---
 
-## 四、核心文件索引
+## 总结：三句话记住 CANN-Bench 精度验证
 
-| 文件 | 职责 |
-|------|------|
-| `src/kernel_eval/utils/compare.py` | 张量精度对比引擎（`compare_tensors` / `_compare_single_tensor`） |
-| `src/kernel_eval/utils/thresholds.py` | 所有阈值表（精度/小值域/相消）及查询函数 |
-| `src/kernel_eval/checkers/relative_error_checker.py` | RelativeErrorChecker 实现，封装 compare_tensors |
-| `src/kernel_eval/checkers/allclose_checker.py` | AllCloseChecker 实现（StanfordBench 用） |
-| `src/kernel_eval/eval/accuracy_eval.py` | AccuracyEvaluator：统一的精度评测入口 |
-| `src/kernel_eval/eval/evaluator.py` | Evaluator：综合评测调度器（golden 执行 + AI 执行 + 精度对比 + 性能采集 + 故障恢复） |
-| `src/kernel_eval/base/result.py` | 结果基类（AccuracyResult / OutputResult / PerfResult / failure_type 分类） |
-| `src/kernel_eval/base/checker.py` | CorrectnessChecker 抽象基类 |
-| `docs/design/precision_comparison_design.md` | 精度对比方案设计文档（MERE/MARE + 小值域 + 相消理论） |
+1. **三角验证**：同一组输入同时跑 NPU（原始精度）、CPU（FP64）、CPU（原始精度），两两对照
+2. **先整体再局部**：先用 MERE/MARE 快速判断整体误差，不通过再分正常值域/小值域/相消区三个区域独立分析
+3. **核心判据**：CPU 同精度参考也跑不掉的误差不是 bug；CPU 能干净的 NPU 做不到的才是 bug
+
+```
+         同一组输入
+              │
+     ┌─────┼─────┐
+     ▼     ▼     ▼
+   NPU   CPU   CPU
+  原始   FP64  原始
+     │     │     │
+     ▼     ▼     ▼
+   ①AI   ②真值  ③对照
+     │     │     │
+     └──┬──┴──┬──┘
+        ▼     ▼
+   阶段1: 整体看 MERE/MARE → 通过? ✅
+        │
+        ▼ 不通过
+   阶段2: 拆开看三区域
+   正常值域 | 小值域 | 相消区
+   每个区域: NPU错误 ÷ max(CPU错误,1) ≤ 2?
+   三个全通过? ✅  任一不通过? ❌
+```
