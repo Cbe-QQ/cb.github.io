@@ -1,0 +1,30 @@
+<%
+  var list = series_info(page.group);
+%>
+<div class="page-shell series-shell">
+  <%- partial('_partial/page-head', {
+    label: 'SERIES',
+    heading: page.title,
+    lede: page.description
+  }) %>
+  <div class="series-intro markdown-body">
+    <%- page.content %>
+  </div>
+  <div class="series-cards">
+    <% list.forEach(function (post, i) { %>
+    <a class="series-card" href="<%- url_for(post.path) %>">
+      <span class="series-card-num"><%= i + 1 %></span>
+      <span class="series-card-body">
+        <span class="series-card-meta">
+          <time datetime="<%= date_xml(post.date) %>"><%= date(post.date, 'YYYY-MM-DD') %></time>
+          <span class="meta-dot">·</span>
+          <span><%= reading_time(post) %> 分钟</span>
+        </span>
+        <span class="series-card-title"><%= post.title %></span>
+        <% if (post.description) { %><span class="series-card-desc"><%= post.description %></span><% } %>
+      </span>
+      <span class="series-card-arrow" aria-hidden="true">→</span>
+    </a>
+    <% }) %>
+  </div>
+</div>

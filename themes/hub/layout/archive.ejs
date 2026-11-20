@@ -1,0 +1,37 @@
+<%
+  var posts = page.posts.sort('-date').toArray();
+  var groups = {};
+  posts.forEach(function (post) {
+    var year = post.date.year();
+    (groups[year] = groups[year] || []).push(post);
+  });
+  var years = Object.keys(groups).sort().reverse();
+  var heading = page.year ? (page.month ? page.year + ' 年 ' + ('0' + page.month).slice(-2) + ' 月' : page.year + ' 年归档') : '归档';
+%>
+<div class="page-shell">
+  <%- partial('_partial/page-head', {
+    label: 'ARCHIVE',
+    heading: heading,
+    lede: '按年份回顾写过的笔记。'
+  }) %>
+  <p class="archive-stat"><%= posts.length %> 篇文章</p>
+  <div class="archive-list">
+    <% years.forEach(function (year) { %>
+    <section class="archive-year">
+      <h2 class="archive-year-title"><%= year %></h2>
+      <% groups[year].forEach(function (post) { %>
+      <a class="archive-item" href="<%- url_for(post.path) %>">
+        <time datetime="<%= date_xml(post.date) %>"><%= date(post.date, 'MM-DD') %></time>
+        <span class="archive-item-title"><%= post.title %></span>
+        <% if (post.group) { %><span class="archive-item-series"><%= series_name(post.group) %></span><% } %>
+      </a>
+      <% }) %>
+    </section>
+    <% }) %>
+  </div>
+  <% if (page.total > 1) { %>
+  <nav class="paginator" aria-label="分页">
+    <%- paginator({ prev_text: '←', next_text: '→' }) %>
+  </nav>
+  <% } %>
+</div>

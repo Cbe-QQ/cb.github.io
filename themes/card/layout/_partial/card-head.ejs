@@ -1,0 +1,21 @@
+<%
+  var layout = page.layout || '';
+  var activeArticles = layout === 'home' || layout === 'docs' || layout === 'post' || is_home() || is_post();
+  var activeCategories = layout === 'categories' || layout === 'category' || is_category();
+  var activeArchive = layout === 'archive' || is_archive();
+  var activeAbout = layout === 'about';
+  var navItems = [
+    { name: '文章', href: '/', active: activeArticles },
+    { name: '分类', href: '/categories/', active: activeCategories },
+    { name: '归档', href: '/archives/', active: activeArchive },
+    { name: '关于', href: '/about/', active: activeAbout }
+  ];
+%>
+<header class="card-head">
+  <span class="card-title"><%= theme.title || 'Notes' %></span>
+  <nav class="nav" aria-label="主导航">
+    <% navItems.forEach(function (item) { %>
+      <a class="<%= item.active ? 'active' : '' %>" href="<%- url_for(item.href) %>"<%- item.active ? ' aria-current="page"' : '' %>><%= item.name %></a>
+    <% }) %>
+  </nav>
+</header>

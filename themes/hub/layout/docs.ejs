@@ -1,0 +1,37 @@
+<%
+  var series = series_info(page.group);
+  var currentIndex = -1;
+  series.forEach(function (p, i) { if (p.path === page.path) currentIndex = i; });
+  var tocHtml = toc(page.content, { min_depth: 2, max_depth: 4, list_number: false }) || '';
+  var hasToc = /<li[\s>]/i.test(tocHtml);
+%>
+<div class="reading-progress" aria-hidden="true"><span id="reading-progress-bar"></span></div>
+<div class="docs-layout<%= hasToc ? '' : ' no-toc' %>">
+  <aside class="docs-side">
+    <%- partial('_partial/series-tree', { group: page.group }) %>
+  </aside>
+  <div class="docs-main">
+    <%- partial('_partial/article', { post: page }) %>
+    <% if (series.length > 1 && currentIndex > -1) { %>
+    <nav class="pager" aria-label="系列文章导航">
+      <% if (currentIndex > 0) { %>
+      <a class="pager-item pager-prev" href="<%- url_for(series[currentIndex - 1].path) %>">
+        <span class="pager-dir">← 上一篇</span>
+        <span class="pager-title"><%= series[currentIndex - 1].title %></span>
+      </a>
+      <% } %>
+      <% if (currentIndex < series.length - 1) { %>
+      <a class="pager-item pager-next" href="<%- url_for(series[currentIndex + 1].path) %>">
+        <span class="pager-dir">下一篇 →</span>
+        <span class="pager-title"><%= series[currentIndex + 1].title %></span>
+      </a>
+      <% } %>
+    </nav>
+    <% } %>
+  </div>
+  <% if (hasToc) { %>
+  <aside class="toc-col">
+    <%- partial('_partial/toc', { tocHtml: tocHtml }) %>
+  </aside>
+  <% } %>
+</div>

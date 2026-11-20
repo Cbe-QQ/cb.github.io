@@ -1,0 +1,16 @@
+brand: CB
+github: https://github.com/Cbe-QQ
+
+hero:
+  eyebrow: A LITTLE CORNER OF THE INTERNET
+  scroll: SCROLL TO EXPLORE
+  coordinate: NOTES FROM ATTENTION TO NPU KERNELS
+
+sidebar:
+  author_name: CB
+  author_handle: AI Infra 学习者
+  author_text: 记录从 Attention 到 NPU 算子的学习过程：读论文、跑代码、写笔记。
+  about_link_text: More about me
+
+footer:
+  tagline: 把理解写下来，让知识可以复用。

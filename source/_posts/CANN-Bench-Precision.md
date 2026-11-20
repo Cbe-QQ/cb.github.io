@@ -5,9 +5,11 @@ categories: CANN
 tags:
   - Precision
   - CANN
+layout: docs
+group: ascend
+order: 1
+description: AI 算子算得对吗:CANN-Bench 精度验证的两阶段判定算法
 mathjax: true
-plugins:
-  - mathjax
 ---
 
 # CANN-Bench 精度验证——如何判断 AI 算子"算对了"？

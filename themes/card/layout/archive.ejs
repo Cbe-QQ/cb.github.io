@@ -1,0 +1,23 @@
+<%
+  var posts = site.posts.sort('-date').toArray();
+  var groups = {};
+  posts.forEach(function (post) {
+    var year = post.date.format('YYYY');
+    (groups[year] = groups[year] || []).push(post);
+  });
+  var years = Object.keys(groups).sort().reverse();
+%>
+<div class="collection">
+  <h1 class="page-title">归档</h1>
+  <% years.forEach(function (year) { %>
+    <h2 class="year"><%= year %></h2>
+    <ul class="archive-list">
+      <% groups[year].forEach(function (post) { %>
+        <li>
+          <time datetime="<%= post.date.toISOString() %>"><%= date(post.date, 'MM-DD') %></time>
+          <a href="<%- url_for(post.path) %>"><%= post.title %></a>
+        </li>
+      <% }) %>
+    </ul>
+  <% }) %>
+</div>

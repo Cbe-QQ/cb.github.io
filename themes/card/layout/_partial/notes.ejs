@@ -1,0 +1,20 @@
+<%
+  var list = (posts || []).slice();
+  list.sort(function (a, b) { return b.date.valueOf() - a.date.valueOf(); });
+%>
+<div class="notes-grid">
+  <% list.forEach(function (post, index) { var cover = card_cover(post, index); %>
+    <a class="note-card" href="<%- url_for(post.path) %>">
+      <span class="note-cover cover-<%= cover.color %>">
+        <span class="cover-orbit orbit-1" aria-hidden="true"></span>
+        <span class="cover-orbit orbit-2" aria-hidden="true"></span>
+        <span class="cover-tag"><%= card_category(post) %></span>
+        <span class="cover-text"><%= cover.label %></span>
+      </span>
+      <span class="note-body">
+        <span class="note-title"><%= post.title %></span>
+        <span class="note-desc"><%= card_summary(post, 82) %></span>
+      </span>
+    </a>
+  <% }) %>
+</div>

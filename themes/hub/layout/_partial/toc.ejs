@@ -1,0 +1,9 @@
+<%
+  var html = typeof tocHtml !== 'undefined' ? tocHtml : toc(page.content, { min_depth: 2, max_depth: 4, list_number: false });
+%>
+<% if (html && /<li[\s>]/i.test(html)) { %>
+<nav class="toc-panel" id="toc" aria-label="文章目录">
+  <p class="toc-title">ON THIS PAGE</p>
+  <%- html %>
+</nav>
+<% } %>

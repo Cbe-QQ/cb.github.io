@@ -1,7 +1,10 @@
 node_modules/
 public/
+preview/
 db.json
 .deploy_git/
+.omc/
+_multiconfig.yml
 .DS_Store
 Thumbs.db
 *.log

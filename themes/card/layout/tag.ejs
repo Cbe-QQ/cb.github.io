@@ -1,0 +1,7 @@
+<%
+  var posts = page.posts ? page.posts.toArray() : [];
+%>
+<div class="collection">
+  <h1 class="page-title">#<%= page.tag || page.title %> <span class="count-inline"><%= posts.length %></span></h1>
+  <%- partial('_partial/notes', { posts: posts }) %>
+</div>

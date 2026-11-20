@@ -1,0 +1,18 @@
+<div class="page-shell">
+  <%- partial('_partial/page-head', {
+    label: 'TAG',
+    heading: '#' + page.tag,
+    lede: '带有这个标签的全部笔记。'
+  }) %>
+  <p class="back-link"><a href="<%- url_for('/tags/') %>">← 返回全部标签</a></p>
+  <div class="article-list">
+    <% page.posts.each(function (post) { %>
+      <%- partial('_partial/post-card', { post: post }) %>
+    <% }) %>
+  </div>
+  <% if (page.total > 1) { %>
+  <nav class="paginator" aria-label="分页">
+    <%- paginator({ prev_text: '←', next_text: '→' }) %>
+  </nav>
+  <% } %>
+</div>

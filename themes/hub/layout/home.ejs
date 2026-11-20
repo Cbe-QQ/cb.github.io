@@ -1,0 +1,112 @@
+<%
+  var blog = site.data.blog || {};
+  var hero = blog.hero || {};
+  var sidebar = blog.sidebar || {};
+
+  var allPosts = site.posts.toArray().sort(function (a, b) {
+    var d = b.date.valueOf() - a.date.valueOf();
+    if (d !== 0) return d;
+    return (a.order || 0) - (b.order || 0);
+  });
+  var latest = allPosts.slice(0, 8);
+
+  var groups = {};
+  allPosts.forEach(function (p) {
+    if (p.group) groups[p.group] = (groups[p.group] || 0) + 1;
+  });
+  var groupKeys = ['deepseek', 'ascend'].filter(function (key) { return groups[key]; });
+  Object.keys(groups).forEach(function (key) {
+    if (groupKeys.indexOf(key) === -1) groupKeys.push(key);
+  });
+%>
+<section class="hero" aria-label="欢迎来到 <%= config.title %>">
+  <div class="hero-bg" aria-hidden="true">
+    <div class="hero-grid"></div>
+    <div class="hero-glow hero-glow-1"></div>
+    <div class="hero-glow hero-glow-2"></div>
+    <div class="hero-glow hero-glow-3"></div>
+  </div>
+  <div class="hero-content">
+    <p class="hero-eyebrow"><span class="hero-dot" aria-hidden="true"></span><%= hero.eyebrow || 'A LITTLE CORNER OF THE INTERNET' %></p>
+    <h1 aria-label="Welcome to <%= config.title %>">Welcome to<br><span class="hero-name"><%= config.title %><span class="hero-period">.</span></span></h1>
+    <div class="hero-rule" aria-hidden="true">
+      <span class="rule-line"></span>
+      <span class="hero-star">✳</span>
+      <span class="rule-line"></span>
+    </div>
+  </div>
+  <a class="scroll-cue" href="#notes">
+    <span><%= hero.scroll || 'SCROLL TO EXPLORE' %></span>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v15M6 13l6 6 6-6"/></svg>
+  </a>
+  <div class="hero-coordinate" aria-hidden="true"><%= hero.coordinate || 'NOTES FROM ATTENTION TO NPU KERNELS' %></div>
+  <div class="hero-wave" aria-hidden="true">
+    <svg viewBox="0 0 1440 180" preserveAspectRatio="none">
+      <path class="wave-back" d="M0 96 C 220 148, 430 44, 700 78 C 970 112, 1190 58, 1440 104 L 1440 180 L 0 180 Z"/>
+      <path class="wave-middle" d="M0 116 C 260 76, 520 146, 790 110 C 1050 76, 1250 128, 1440 92 L 1440 180 L 0 180 Z"/>
+      <path class="wave-front" d="M0 136 C 300 174, 610 104, 910 134 C 1150 158, 1320 124, 1440 144 L 1440 180 L 0 180 Z"/>
+    </svg>
+  </div>
+</section>
+
+<div id="notes" class="content-wrap">
+  <div class="main-column">
+    <div class="section-heading">
+      <h2>ARTICLES &amp; NOTES</h2>
+      <span class="article-count" id="article-count" aria-live="polite"><%= allPosts.length %> 篇笔记</span>
+    </div>
+    <div class="filter-state" id="filter-state" hidden>
+      <span id="filter-label"></span>
+      <button type="button" id="filter-clear">查看全部 ×</button>
+    </div>
+    <div class="article-list" id="article-list">
+      <% latest.forEach(function (post) { %>
+        <%- partial('_partial/post-card', { post: post }) %>
+      <% }) %>
+    </div>
+    <p class="empty-state" id="empty-state" hidden>这个主题下暂时没有笔记。</p>
+    <a class="more-button" href="<%- url_for('/blog/') %>">
+      <span class="more-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+      </span>
+      <span class="more-label">全部笔记</span>
+    </a>
+  </div>
+
+  <aside class="sidebar" aria-label="主题筛选与作者信息">
+    <section class="topic-section">
+      <h2 class="section-label">BROWSE BY TOPIC</h2>
+      <div class="topic-list" role="group" aria-label="按主题筛选">
+        <button class="topic active" type="button" data-filter="" data-label="全部笔记" aria-pressed="true">全部笔记 <span><%= allPosts.length %></span></button>
+        <% groupKeys.forEach(function (key) { %>
+        <button class="topic" type="button" data-filter="<%= key %>" data-label="<%= series_name(key) %>" aria-pressed="false"><%= series_name(key) %> <span><%= groups[key] %></span></button>
+        <% }) %>
+      </div>
+    </section>
+
+    <section class="explore-section">
+      <h2 class="section-label">START EXPLORING</h2>
+      <ol class="explore-list">
+        <li><a href="<%- url_for('/series/deepseek/') %>"><span aria-hidden="true">↗</span>DeepSeek 系列</a></li>
+        <li><a href="<%- url_for('/series/ascend/') %>"><span aria-hidden="true">↗</span>Ascend 算子系列</a></li>
+        <li><a href="<%- url_for('/categories/') %>"><span aria-hidden="true">↗</span>按分类浏览</a></li>
+        <li><a href="<%- url_for('/about/') %>"><span aria-hidden="true">↗</span>关于这个博客</a></li>
+      </ol>
+    </section>
+
+    <section class="author-note">
+      <svg class="note-spark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true"><path d="M12 2v20M2 12h20M5 5l14 14M19 5 5 19"/></svg>
+      <div class="author-heading">
+        <span class="author-avatar" aria-hidden="true"><%= blog.brand || 'CB' %></span>
+        <div>
+          <strong>Hey, I'm <%= sidebar.author_name || 'CB' %>.</strong>
+          <span><%= sidebar.author_handle || 'AI Infra 学习者' %></span>
+        </div>
+      </div>
+      <p><%= sidebar.author_text || '记录从 Attention 到 NPU 算子的学习过程：读论文、跑代码、写笔记。' %></p>
+      <a href="<%- url_for('/about/') %>"><%= sidebar.about_link_text || 'More about me' %> <span aria-hidden="true">↗</span></a>
+    </section>
+
+    <a class="back-to-top" id="back-to-top" href="#">Back to the skyline <span aria-hidden="true">↑</span></a>
+  </aside>
+</div>

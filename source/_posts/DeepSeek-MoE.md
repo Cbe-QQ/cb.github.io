@@ -7,9 +7,11 @@ tags:
   - DeepSeek
   - Mixture of Experts
   - Deep Learning
+layout: docs
+group: deepseek
+order: 3
+description: DeepSeek 的 MoE 架构:细粒度专家与共享专家隔离的设计动机
 mathjax: true
-plugins:
-  - mathjax
 ---
 
 #### 概念：

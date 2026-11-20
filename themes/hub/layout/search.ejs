@@ -1,0 +1,14 @@
+<div class="page-shell search-shell" data-index-url="<%- url_for('/search.json') %>">
+  <%- partial('_partial/page-head', {
+    label: 'SEARCH',
+    heading: '搜索',
+    lede: '在全部笔记中检索标题、正文、分类与标签。'
+  }) %>
+  <div class="search-box">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+    <input type="search" id="search-input" placeholder="搜索标题、正文、分类或标签…" autocomplete="off" spellcheck="false" aria-label="搜索关键词">
+    <span class="search-hint" aria-hidden="true">按 / 聚焦</span>
+  </div>
+  <p class="search-status" id="search-status" role="status">正在加载索引…</p>
+  <div class="search-results" id="search-results"></div>
+</div>

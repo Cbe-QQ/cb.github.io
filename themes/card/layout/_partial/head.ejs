@@ -1,0 +1,34 @@
+<%
+  var pageTitle = (page.title && page.layout !== 'home') ? page.title + ' · ' + config.title : config.title;
+  var pageDesc = page.description || config.description || '';
+  var canonical = full_url_for(page.path || '');
+%>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><%= pageTitle %></title>
+<meta name="description" content="<%= pageDesc %>">
+<link rel="canonical" href="<%- canonical %>">
+<meta property="og:title" content="<%= pageTitle %>">
+<meta property="og:description" content="<%= pageDesc %>">
+<meta property="og:type" content="<%= is_post() ? 'article' : 'website' %>">
+<meta property="og:url" content="<%- canonical %>">
+<meta name="theme-color" content="#f4f4f5">
+<link rel="icon" href="<%- url_for('/images/avatar.svg') %>" type="image/svg+xml">
+<link rel="alternate" type="application/rss+xml" title="<%= config.title %>" href="<%- url_for('/rss.xml') %>">
+<link rel="stylesheet" href="<%- url_for('/css/style.css') %>">
+<link rel="stylesheet" href="<%= theme.highlight_light %>" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="<%= theme.highlight_dark %>" media="(prefers-color-scheme: dark)">
+<% if (page.mathjax) { %>
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']]
+    },
+    options: {
+      skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+    }
+  };
+</script>
+<script defer src="<%= theme.mathjax %>"></script>
+<% } %>

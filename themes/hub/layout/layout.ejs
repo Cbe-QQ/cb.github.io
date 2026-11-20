@@ -1,0 +1,21 @@
+<%
+  var bodyClass = page.layout === 'home' ? 'layout-home' : (page.path === '404.html' ? 'layout-404' : 'layout-inner');
+%>
+<!DOCTYPE html>
+<html lang="<%= config.language %>" data-theme="light">
+<head>
+  <%- partial('_partial/head') %>
+</head>
+<body class="<%= bodyClass %>">
+  <a class="skip-link" href="#main-content">跳到正文</a>
+  <%- partial('_partial/header') %>
+  <main id="main-content">
+    <%- body %>
+  </main>
+  <%- partial('_partial/footer') %>
+  <script src="<%- url_for('/js/theme.js') %>"></script>
+  <% if (page.layout === 'search') { %>
+  <script src="<%- url_for('/js/search.js') %>"></script>
+  <% } %>
+</body>
+</html>

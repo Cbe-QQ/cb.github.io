@@ -1,0 +1,16 @@
+<%
+  var list = series_info(group);
+%>
+<nav class="series-tree" aria-label="系列目录">
+  <p class="series-tree-eyebrow">SERIES</p>
+  <a class="series-tree-title" href="<%- url_for('/series/' + group + '/') %>"><%= series_name(group) %></a>
+  <ol class="series-tree-list">
+    <% list.forEach(function (post, i) { %>
+    <li>
+      <a class="series-tree-link<%= page.path === post.path ? ' active' : '' %>" href="<%- url_for(post.path) %>"<% if (page.path === post.path) { %> aria-current="page"<% } %>>
+        <span class="series-tree-num"><%= i + 1 %></span><span class="series-tree-text"><%= post.title %></span>
+      </a>
+    </li>
+    <% }) %>
+  </ol>
+</nav>

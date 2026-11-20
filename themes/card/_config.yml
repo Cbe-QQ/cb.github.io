@@ -1,0 +1,20 @@
+# card theme — inspired by world56/personal-website
+
+brand: CB
+title: Notes
+author: CB
+role: AI Infra 学习者
+avatar: /images/avatar.svg
+
+github: https://github.com/Cbe-QQ
+github_label: github.com/Cbe-QQ
+
+mathjax: https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+highlight_light: https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css
+highlight_dark: https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css
+
+series:
+  - name: DeepSeek 系列
+    path: /series/deepseek/
+  - name: Ascend 算子系列
+    path: /series/ascend/

@@ -1,0 +1,21 @@
+<%
+  var posts = site.posts.sort('-date').toArray();
+%>
+<div class="collection">
+  <h1 class="page-title">搜索</h1>
+  <input id="search-input" class="search-input" type="search" placeholder="搜索标题、摘要或分类…" autocomplete="off">
+  <ul class="search-list" id="search-list">
+    <% posts.forEach(function (post) {
+      var cats = post.categories ? post.categories.toArray().map(function (cat) { return cat.name; }).join(' ') : '';
+      var searchText = (post.title + ' ' + (post.description || '') + ' ' + cats).toLowerCase();
+    %>
+      <li data-search="<%= searchText %>">
+        <a href="<%- url_for(post.path) %>">
+          <span class="search-title"><%= post.title %></span>
+          <span class="search-desc"><%= post.description || '' %></span>
+        </a>
+      </li>
+    <% }) %>
+  </ul>
+  <p class="empty" id="search-empty" hidden>没有匹配的笔记。</p>
+</div>

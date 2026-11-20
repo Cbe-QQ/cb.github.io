@@ -1,0 +1,41 @@
+<%
+  var raw = post.content || '';
+  var content = raw
+    .replace(/^\s*<h1\b[^>]*>[\s\S]*?<\/h1>\s*/i, '')
+    .replace(/^\s*<hr\s*\/?>\s*/i, '');
+  var categories = post.categories ? post.categories.toArray() : [];
+  var tags = post.tags ? post.tags.toArray() : [];
+%>
+<article class="article">
+  <header class="article-header">
+    <% if (post.group) { %>
+    <p class="article-eyebrow">
+      <a href="<%- url_for('/series/' + post.group + '/') %>"><%= series_name(post.group) %></a>
+      <span class="meta-dot">·</span>
+      <span>NOTE</span>
+    </p>
+    <% } %>
+    <h1 class="article-title"><%= post.title %></h1>
+    <% if (post.description) { %><p class="article-lede"><%= post.description %></p><% } %>
+    <div class="article-meta">
+      <time datetime="<%= date_xml(post.date) %>"><%= date(post.date, 'YYYY-MM-DD') %></time>
+      <span class="meta-dot">·</span>
+      <span><%= reading_time(post) %> 分钟阅读</span>
+      <% if (categories.length) { %>
+      <span class="meta-dot">·</span>
+      <a href="<%- url_for(categories[0].path) %>"><%= categories[0].name %></a>
+      <% } %>
+    </div>
+  </header>
+  <div class="article-content markdown-body">
+    <%- content %>
+  </div>
+  <% if (tags.length) { %>
+  <footer class="article-tags">
+    <span class="tag-label">标签</span>
+    <% tags.forEach(function (tag) { %>
+      <a class="article-tag" href="<%- url_for(tag.path) %>"><%= tag.name %></a>
+    <% }) %>
+  </footer>
+  <% } %>
+</article>

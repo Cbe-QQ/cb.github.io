@@ -1,0 +1,31 @@
+<%
+  var tocHtml = toc(page.content, { min_depth: 2, max_depth: 4, list_number: false }) || '';
+  var hasToc = /<li[\s>]/i.test(tocHtml);
+%>
+<div class="reading-progress" aria-hidden="true"><span id="reading-progress-bar"></span></div>
+<div class="article-layout<%= hasToc ? '' : ' no-toc' %>">
+  <div class="article-column">
+    <%- partial('_partial/article', { post: page }) %>
+    <% if (page.prev || page.next) { %>
+    <nav class="pager" aria-label="文章导航">
+      <% if (page.prev) { %>
+      <a class="pager-item pager-prev" href="<%- url_for(page.prev.path) %>">
+        <span class="pager-dir">← 上一篇</span>
+        <span class="pager-title"><%= page.prev.title %></span>
+      </a>
+      <% } %>
+      <% if (page.next) { %>
+      <a class="pager-item pager-next" href="<%- url_for(page.next.path) %>">
+        <span class="pager-dir">下一篇 →</span>
+        <span class="pager-title"><%= page.next.title %></span>
+      </a>
+      <% } %>
+    </nav>
+    <% } %>
+  </div>
+  <% if (hasToc) { %>
+  <aside class="toc-col">
+    <%- partial('_partial/toc', { tocHtml: tocHtml }) %>
+  </aside>
+  <% } %>
+</div>

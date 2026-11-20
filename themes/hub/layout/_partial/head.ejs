@@ -1,0 +1,71 @@
+<%
+  var rawTitle = page.title;
+  if (!rawTitle && page.category) rawTitle = page.category;
+  if (!rawTitle && page.tag) rawTitle = page.tag;
+  if (!rawTitle && page.archive) rawTitle = page.year ? page.year + ' 年归档' : '归档';
+  if (!rawTitle && page.path === 'tags/index.html') rawTitle = '标签';
+  if (!rawTitle && is_home()) rawTitle = '全部笔记';
+
+  var pageTitle = rawTitle ? rawTitle + ' | ' + config.title : config.title;
+  var pageDesc = page.description || config.description;
+  var canonical = page.layout === 'home'
+    ? config.url + '/'
+    : full_url_for(page.path || '').replace(/index\.html$/, '');
+  var ogType = is_post() ? 'article' : 'website';
+%>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><%= pageTitle %></title>
+<meta name="description" content="<%= pageDesc %>">
+<meta name="theme-color" content="#f4f8fd">
+<link rel="canonical" href="<%= canonical %>">
+<meta property="og:type" content="<%= ogType %>">
+<meta property="og:title" content="<%= rawTitle || config.title %>">
+<meta property="og:description" content="<%= pageDesc %>">
+<meta property="og:url" content="<%= canonical %>">
+<meta property="og:site_name" content="<%= config.title %>">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="<%= rawTitle || config.title %>">
+<meta name="twitter:description" content="<%= pageDesc %>">
+<% if (page.layout === 'search') { %>
+<meta name="robots" content="noindex, nofollow">
+<% } %>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Crect%20width='64'%20height='64'%20rx='14'%20fill='%23284e79'/%3E%3Cg%20stroke='%23fff'%20stroke-width='5'%20stroke-linecap='round'%3E%3Cpath%20d='M32%2016v32M18%2024l28%2016M46%2024L18%2040'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="alternate" type="application/rss+xml" title="<%= config.title %>" href="<%- url_for('/rss.xml') %>">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+<link rel="stylesheet" href="<%- theme.highlight.light %>" id="hljs-light">
+<link rel="stylesheet" href="<%- theme.highlight.dark %>" id="hljs-dark" disabled>
+<script>
+(function () {
+  // 首帧前应用主题,并只启用对应的代码高亮样式,避免闪烁
+  var t = null;
+  try { t = localStorage.getItem('hub-theme'); } catch (e) {}
+  if (t !== 'light' && t !== 'dark') {
+    t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  document.documentElement.setAttribute('data-theme', t);
+  var light = document.getElementById('hljs-light');
+  var dark = document.getElementById('hljs-dark');
+  if (light) light.disabled = t === 'dark';
+  if (dark) dark.disabled = t !== 'dark';
+  var meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', t === 'dark' ? '#111c2b' : '#f4f8fd');
+})();
+</script>
+<link rel="stylesheet" href="<%- url_for('/css/style.css') %>">
+<% if (page.mathjax) { %>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']]
+  },
+  svg: {
+    fontCache: 'global',
+    linebreaks: { automatic: true }
+  }
+};
+</script>
+<script defer src="<%- theme.mathjax.cdn %>"></script>
+<% } %>

@@ -7,9 +7,11 @@ tags:
   - Multi-head Latent Attention
   - DeepSeek
   - KV Cache
+layout: docs
+group: deepseek
+order: 2
+description: DeepSeek 的 KV Cache 压缩方案:MLA 低秩联合压缩的原理与推理收益
 mathjax: true
-plugins:
-  - mathjax
 ---
 
 在聊MLA作用之前，先说一下推理的流程，总共分为2个流程：

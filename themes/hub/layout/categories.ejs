@@ -1,0 +1,30 @@
+<%
+  var cats = site.categories.toArray().sort(function (a, b) { return b.length - a.length; });
+%>
+<div class="page-shell">
+  <%- partial('_partial/page-head', {
+    label: 'CATEGORIES',
+    heading: '分类',
+    lede: '按主题浏览全部笔记。每个分类下按时间倒序排列。'
+  }) %>
+  <div class="category-grid">
+    <% cats.forEach(function (cat) { %>
+    <section class="category-block">
+      <header class="category-block-head">
+        <h2><a href="<%- url_for(cat.path) %>"><%= cat.name %></a></h2>
+        <span><%= cat.length %> 篇</span>
+      </header>
+      <ul class="category-post-list">
+        <% cat.posts.sort('-date').each(function (post) { %>
+        <li>
+          <a href="<%- url_for(post.path) %>">
+            <span><%= post.title %></span>
+            <time datetime="<%= date_xml(post.date) %>"><%= date(post.date, 'YYYY-MM-DD') %></time>
+          </a>
+        </li>
+        <% }) %>
+      </ul>
+    </section>
+    <% }) %>
+  </div>
+</div>

@@ -1,0 +1,14 @@
+<%
+  var topic = post_topic(post);
+  var excerpt = post.description || post_excerpt(post, 180);
+%>
+<article class="post" data-topic="<%= post.group || '' %>">
+  <div class="post-meta">
+    <span class="post-topic"><%= topic %></span>
+    <span class="meta-dot">·</span>
+    <time datetime="<%= date_xml(post.date) %>"><%= date(post.date, 'YYYY-MM-DD') %></time>
+  </div>
+  <h3><a href="<%- url_for(post.path) %>"><%= post.title %></a></h3>
+  <% if (excerpt) { %><p class="post-excerpt"><%= excerpt %></p><% } %>
+  <a class="read-more" href="<%- url_for(post.path) %>">Read more <span aria-hidden="true">→</span></a>
+</article>

@@ -1,0 +1,26 @@
+<%
+  var cats = site.categories.toArray().sort(function (a, b) { return b.length - a.length; });
+%>
+<div class="page-shell">
+  <%- partial('_partial/page-head', {
+    label: 'ALL NOTES',
+    heading: '全部笔记',
+    lede: '按时间顺序浏览所有文章，也可以用分类快速筛选。'
+  }) %>
+  <div class="filter-chips" aria-label="分类筛选">
+    <a class="topic-chip active" href="<%- url_for('/blog/') %>">全部 <span class="chip-count"><%= site.posts.length %></span></a>
+    <% cats.forEach(function (cat) { %>
+    <a class="topic-chip" href="<%- url_for(cat.path) %>"><%= cat.name %> <span class="chip-count"><%= cat.length %></span></a>
+    <% }) %>
+  </div>
+  <div class="article-list">
+    <% page.posts.each(function (post) { %>
+      <%- partial('_partial/post-card', { post: post }) %>
+    <% }) %>
+  </div>
+  <% if (page.total > 1) { %>
+  <nav class="paginator" aria-label="分页">
+    <%- paginator({ prev_text: '←', next_text: '→' }) %>
+  </nav>
+  <% } %>
+</div>

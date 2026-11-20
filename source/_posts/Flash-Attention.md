@@ -6,9 +6,11 @@ tags:
   - Flash Attention
   - Attention
   - Deep Learning
+layout: docs
+group: deepseek
+order: 1
+description: IO 感知的注意力算子:从朴素实现到 FlashAttention V1/V2 的优化脉络
 mathjax: true
-plugins:
-  - mathjax
 ---
 
 ### 基础Attention

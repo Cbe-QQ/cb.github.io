@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <%- partial('_partial/head') %>
+</head>
+<body>
+  <div class="page">
+    <%- partial('_partial/profile') %>
+    <main class="content-card">
+      <%- partial('_partial/card-head') %>
+      <%- body %>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <span>© <%= new Date().getFullYear() %> <%= theme.author || config.author || 'CB' %></span>
+    <span class="footer-dot" aria-hidden="true">·</span>
+    <span>Powered by <a href="https://hexo.io" target="_blank" rel="noopener">Hexo</a></span>
+  </footer>
+
+  <script src="<%- url_for('/js/main.js') %>"></script>
+</body>
+</html>

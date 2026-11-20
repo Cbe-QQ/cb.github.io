@@ -1,0 +1,16 @@
+<%
+  var tags = page.tags.toArray().sort(function (a, b) { return b.length - a.length; });
+%>
+<div class="page-shell">
+  <%- partial('_partial/page-head', {
+    label: 'TAGS',
+    heading: '标签',
+    lede: '用关键词串起不同系列与主题的笔记。'
+  }) %>
+  <div class="tag-cloud">
+    <% tags.forEach(function (tag) { %>
+    <a class="tag-chip" href="<%- url_for(tag.path) %>"><%= tag.name %><span class="chip-count"><%= tag.length %></span></a>
+    <% }) %>
+  </div>
+  <p class="back-link back-link-foot"><a href="<%- url_for('/archives/') %>">按时间浏览全部笔记 →</a></p>
+</div>

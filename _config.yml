@@ -4,8 +4,8 @@
 
 # Site
 title: CB's Blog
-subtitle: ''
-description: ''
+subtitle: 'AI Infra 学习笔记:从 Attention 到 NPU 算子'
+description: 'AI Infra 学习笔记:从 Attention 到 NPU 算子,记录 DeepSeek 与昇腾(Ascend)系列的学习与推导'
 keywords:
 author: CB
 language: zh-CN
@@ -50,7 +50,7 @@ highlight:
   auto_detect: false
   tab_replace: ''
   wrap: true
-  hljs: false
+  hljs: true
 prismjs:
   preprocess: true
   line_number: true
@@ -61,7 +61,7 @@ prismjs:
 # per_page: Posts displayed per page. (0 = disable pagination)
 # order_by: Posts order. (Order by date descending by default)
 index_generator:
-  path: ''
+  path: blog
   per_page: 10
   order_by: -date
 
@@ -97,7 +97,11 @@ ignore:
 # Extensions
 ## Plugins: https://hexo.io/plugins/
 ## Themes: https://hexo.io/themes/
-theme: volantis
+theme: card
+
+# Tag & Category generators
+tag_generator:
+  enable_index_page: true
 
 # Markdown renderer
 marked:

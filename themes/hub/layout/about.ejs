@@ -1,0 +1,58 @@
+<%
+  var blog = site.data.blog || {};
+  var interests = page.interests || [];
+  var links = page.links || [];
+  var seriesList = [
+    { name: 'DeepSeek 系列', path: '/series/deepseek/', posts: series_info('deepseek') },
+    { name: 'Ascend 算子系列', path: '/series/ascend/', posts: series_info('ascend') }
+  ];
+%>
+<div class="page-shell about-shell">
+  <header class="about-hero">
+    <p class="about-eyebrow"><%= page.eyebrow || 'ABOUT THIS BLOG' %></p>
+    <h1 class="about-name"><%= blog.brand || 'CB' %><span>.</span></h1>
+    <p class="about-role"><%= page.role || 'AI Infra 学习者' %></p>
+    <p class="about-intro"><%= page.intro || page.description %></p>
+    <% if (interests.length) { %>
+    <div class="interest-list">
+      <% interests.forEach(function (item) { %><span class="interest-chip"><%= item %></span><% }) %>
+    </div>
+    <% } %>
+    <% if (links.length) { %>
+    <div class="about-links">
+      <% links.forEach(function (link) { %>
+      <a href="<%= /^https?:/.test(link.url) ? link.url : url_for(link.url) %>"<% if (/^https?:/.test(link.url)) { %> target="_blank" rel="noopener"<% } %>><%= link.label %> <span aria-hidden="true">↗</span></a>
+      <% }) %>
+    </div>
+    <% } %>
+  </header>
+
+  <div class="about-grid">
+    <div class="about-body markdown-body">
+      <%- page.content %>
+    </div>
+    <aside class="about-aside">
+      <section>
+        <h2 class="section-label">SERIES</h2>
+        <ul class="about-series-list">
+          <% seriesList.forEach(function (item) { %>
+          <li>
+            <a href="<%- url_for(item.path) %>">
+              <span><%= item.name %></span>
+              <span class="about-series-count"><%= item.posts.length %> 篇</span>
+            </a>
+          </li>
+          <% }) %>
+        </ul>
+      </section>
+      <section>
+        <h2 class="section-label">ELSEWHERE</h2>
+        <div class="about-external">
+          <% if (blog.github) { %><a href="<%- blog.github %>" target="_blank" rel="noopener">GitHub ↗</a><% } %>
+          <a href="<%- url_for('/rss.xml') %>">RSS 订阅 ↗</a>
+          <a href="<%- url_for('/archives/') %>">全部归档 ↗</a>
+        </div>
+      </section>
+    </aside>
+  </div>
+</div>

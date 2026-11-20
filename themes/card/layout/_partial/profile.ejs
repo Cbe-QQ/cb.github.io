@@ -1,0 +1,46 @@
+<aside class="profile-card" aria-label="作者信息">
+  <img class="avatar" src="<%- url_for(theme.avatar) %>" alt="<%= theme.author %>" width="120" height="120">
+  <h1 class="profile-name"><%= theme.author %></h1>
+  <p class="profile-role"><%= theme.role %></p>
+
+  <hr class="profile-divider">
+
+  <ul class="contact-list">
+    <li>
+      <span class="contact-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg>
+      </span>
+      <span class="contact-text">
+        <span class="contact-label">GitHub</span>
+        <a class="contact-value" href="<%= theme.github %>" target="_blank" rel="noopener"><%= theme.github_label %></a>
+      </span>
+    </li>
+    <li>
+      <span class="contact-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 11a8 8 0 0 1 8 8M5 5a14 14 0 0 1 14 14"/><circle cx="5.5" cy="18.5" r="1.5" fill="currentColor" stroke="none"/></svg>
+      </span>
+      <span class="contact-text">
+        <span class="contact-label">RSS</span>
+        <a class="contact-value" href="<%- url_for('/rss.xml') %>">订阅更新</a>
+      </span>
+    </li>
+    <li>
+      <span class="contact-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>
+      </span>
+      <span class="contact-text">
+        <span class="contact-label">笔记</span>
+        <a class="contact-value" href="<%- url_for('/') %>"><%= site.posts.length %> 篇文章</a>
+      </span>
+    </li>
+  </ul>
+
+  <% if (theme.series && theme.series.length) { %>
+  <div class="profile-series">
+    <span class="profile-series-title">系列</span>
+    <% theme.series.forEach(function (item) { %>
+      <a href="<%- url_for(item.path) %>"><%= item.name %> <span aria-hidden="true">↗</span></a>
+    <% }) %>
+  </div>
+  <% } %>
+</aside>

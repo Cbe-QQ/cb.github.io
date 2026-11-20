@@ -1,0 +1,17 @@
+<%
+  var cats = site.categories.toArray().sort(function (a, b) { return b.length - a.length; });
+%>
+<div class="collection">
+  <h1 class="page-title">分类</h1>
+  <% if (page.description) { %><p class="page-desc"><%= page.description %></p><% } %>
+  <ul class="collection-list">
+    <% cats.forEach(function (cat) { %>
+      <li>
+        <a href="<%- url_for(cat.path) %>">
+          <span><%= cat.name %></span>
+          <span class="count"><%= cat.length %></span>
+        </a>
+      </li>
+    <% }) %>
+  </ul>
+</div>

@@ -1,0 +1,10 @@
+<div class="page-shell">
+  <%- partial('_partial/page-head', {
+    label: 'PAGE',
+    heading: page.title,
+    lede: page.description
+  }) %>
+  <article class="article-content markdown-body">
+    <%- page.content %>
+  </article>
+</div>

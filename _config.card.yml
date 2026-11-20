@@ -1,0 +1,10 @@
+# 预览配置：hexo generate --config _config.yml,_config.card.yml
+theme: card
+url: http://localhost:5000
+root: /cb.github.io/
+public_dir: preview/cb.github.io
+
+index_generator:
+  path: blog
+  per_page: 10
+  order_by: -date

@@ -1,0 +1,14 @@
+<%
+  var blog = site.data.blog || {};
+  var footer = blog.footer || {};
+%>
+<footer class="site-footer">
+  <a class="footer-brand" href="<%- url_for('/') %>"><%= blog.brand || 'CB' %><span>.</span></a>
+  <p class="footer-tagline"><%= footer.tagline || config.subtitle %></p>
+  <div class="footer-links">
+    <% if (blog.github) { %><a href="<%- blog.github %>" target="_blank" rel="noopener">GitHub</a><% } %>
+    <a href="<%- url_for('/rss.xml') %>">RSS</a>
+    <a href="<%- url_for('/about/') %>">关于</a>
+  </div>
+  <p class="footer-copy">© <%= new Date().getFullYear() %> <%= config.author %> · Powered by <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a></p>
+</footer>
